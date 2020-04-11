@@ -1,0 +1,42 @@
+version: '3'
+services:
+  seed:
+    build:
+      context: .
+    image: k-kinzal/akka-samples-cluster-scala:latest
+    container_name: akka-sample-cluster-docker-compose-scala_seed_1
+    networks:
+      default:
+        aliases:
+          - akka-samples-cluster-scala
+        ipv4_address: 192.168.96.2
+  c1:
+    build:
+      context: .
+    image: k-kinzal/akka-samples-cluster-scala:latest
+    networks:
+      default:
+        aliases:
+          - akka-samples-cluster-scala
+        ipv4_address: 192.168.96.3
+    depends_on:
+      - seed
+  c2:
+    build:
+      context: .
+    image: k-kinzal/akka-samples-cluster-scala:latest
+    networks:
+      default:
+        aliases:
+          - akka-samples-cluster-scala
+        ipv4_address: 192.168.96.4
+    depends_on:
+      - seed
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.96.0/20
