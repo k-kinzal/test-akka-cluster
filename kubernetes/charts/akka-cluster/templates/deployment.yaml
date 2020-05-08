@@ -1,0 +1,74 @@
+{{- $root := . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ include "akka-cluster.fullname" . }}"
+  labels:
+    {{- include "akka-cluster.labels" . | nindent 4 }}
+    {{- with .Values.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- toYaml .Values.annotations | nindent 4 }}
+spec:
+  {{- with .Values.replicaCount }}
+  replicas: {{ . }}
+  {{- end }}
+  strategy:
+    {{ toYaml .Values.strategy | nindent 4 }}
+  selector:
+    matchLabels:
+      {{- include "akka-cluster.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "akka-cluster.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      serviceAccountName: "{{ .Values.serviceAccountName }}"
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tags }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          command:
+            {{- toYaml .Values.command | nindent 12 }}
+          ports:
+            - name: remoting
+              containerPort: {{ .Values.akkaCluster.remoting.port }}
+              protocol: TCP
+            {{- if .Values.akka.http.enabled }}
+            - name: http
+              containerPort: {{ .Value.akka.http.port }}
+              protocol: TCP
+            {{- end }}
+            {{- id .Values.akka.management.enabled }}
+            - name: management
+              containerPort: {{ .Values.akkaCluster.management.port }}
+              protocol: TCP
+            {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          lifecycle:
+            {{ toYaml .Values.fpm.lifecycle | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      restartPolicy: "{{ .Values.restartPolicy }}"
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}

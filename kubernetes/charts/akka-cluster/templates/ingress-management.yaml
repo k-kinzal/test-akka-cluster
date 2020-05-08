@@ -1,0 +1,40 @@
+{{- if and .Values.akka.management.enabled .Values.akka.management.ingress.enabled -}}
+{{- $fullName := include "akka-cluster.fullname" . -}}
+{{- $svcPort := .Values.akka.http.service.port -}}
+apiVersion: {{ include ""akka-cluster.ingress.apiVersion""}}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-management
+  labels:
+    {{- include "akka-cluster.labels" . | nindent 4 }}
+    {{- with .Values.akka.management.ingress.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.akka.management.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+{{- if .Values.akka.management.ingress.tls }}
+  tls:
+  {{- range .Values.akka.management.ingress.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . | quote }}
+      {{- end }}
+      secretName: {{ .secretName }}
+  {{- end }}
+{{- end }}
+  rules:
+  {{- range .Values.akka.management.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+        {{- range .paths }}
+          - path: {{ . }}
+            backend:
+              serviceName: {{ $fullName }}-management
+              servicePort: {{ $svcPort }}
+        {{- end }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,21 @@
+{{- if .Values.akka.http.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "akka-cluster.fullname" . }}-management
+  labels:
+    {{- include "akka-cluster.labels" . | nindent 4 }}
+    {{- with .Values.akka.management.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- toYaml .Values.akka.http.management.annotations | nindent4 }}
+spec:
+  type: {{ .Values.akka.http.management.type }}
+  ports:
+    - port: {{ .Values.akka.http.management.port }}
+      targetPort: management
+      protocol: TCP
+      name: management
+  selector:
+    {{- include "akka-cluster.selectorLabels" . | nindent 4 }}

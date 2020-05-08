@@ -1,0 +1,21 @@
+{{- if .Values.akka.http.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "akka-cluster.fullname" . }}-http
+  labels:
+    {{- include "akka-cluster.labels" . | nindent 4 }}
+    {{- with .Values.akka.http.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- toYaml .Values.akka.http.service.annotations | nindent4 }}
+spec:
+  type: {{ .Values.akka.http.service.type }}
+  ports:
+    - port: {{ .Values.akka.http.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "akka-cluster.selectorLabels" . | nindent 4 }}
