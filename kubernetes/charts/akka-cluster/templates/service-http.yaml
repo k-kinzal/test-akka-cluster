@@ -2,14 +2,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "akka-cluster.fullname" . }}-http
+  name: {{ include "akka-cluster.fullname" . }}
   labels:
     {{- include "akka-cluster.labels" . | nindent 4 }}
     {{- with .Values.akka.http.service.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
   annotations:
-    {{- toYaml .Values.akka.http.service.annotations | nindent4 }}
+    {{- toYaml .Values.akka.http.service.annotations | nindent 4 }}
 spec:
   type: {{ .Values.akka.http.service.type }}
   ports:
@@ -19,3 +19,4 @@ spec:
       name: http
   selector:
     {{- include "akka-cluster.selectorLabels" . | nindent 4 }}
+{{- end }}

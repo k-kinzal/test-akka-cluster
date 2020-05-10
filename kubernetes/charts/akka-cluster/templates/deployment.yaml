@@ -9,20 +9,23 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
   annotations:
+    checksum/configmap-busybox: "{{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}"
+    {{- with .Values.annotations }}
     {{- toYaml .Values.annotations | nindent 4 }}
+    {{- end }}
 spec:
   {{- with .Values.replicaCount }}
   replicas: {{ . }}
   {{- end }}
   strategy:
-    {{ toYaml .Values.strategy | nindent 4 }}
+    {{- toYaml .Values.strategy | nindent 4 }}
   selector:
     matchLabels:
       {{- include "akka-cluster.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "akka-cluster.selectorLabels" . | nindent 8 }}
+        {{- include "akka-cluster.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -42,28 +45,56 @@ spec:
           imagePullPolicy: "{{ .Values.image.pullPolicy }}"
           command:
             {{- toYaml .Values.command | nindent 12 }}
+          args:
+            {{- if .Values.akka.config }}
+            - "-Dconfig.file=/opt/conf/"
+            {{- end }}
+          env:
+            {{- toYaml .Values.env | nindent 12 }}
+          envFrom:
+            {{- toYaml .Values.envFrom | nindent 12 }}
           ports:
             - name: remoting
-              containerPort: {{ .Values.akkaCluster.remoting.port }}
+              containerPort: {{ .Values.akka.remote.port }}
               protocol: TCP
             {{- if .Values.akka.http.enabled }}
             - name: http
-              containerPort: {{ .Value.akka.http.port }}
+              containerPort: {{ .Values.akka.http.port }}
               protocol: TCP
             {{- end }}
-            {{- id .Values.akka.management.enabled }}
+            {{- if .Values.akka.management.enabled }}
             - name: management
-              containerPort: {{ .Values.akkaCluster.management.port }}
+              containerPort: {{ .Values.akka.management.port }}
               protocol: TCP
             {{- end }}
+          {{- with .Values.livenessProbe }}
           livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
           readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           lifecycle:
-            {{ toYaml .Values.fpm.lifecycle | nindent 12 }}
+            {{- toYaml .Values.lifecycle | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.akka.config }}
+          volumeMounts:
+            {{- range $name, $v := . }}
+            - name: {{ $name | replace "." "-" | lower }}
+              mountPath: /opt/conf
+              subPath: {{ $name }}
+            {{- end }}
+          {{- end }}
+      {{- with .Values.akka.config }}
+      volumes:
+        {{- range $name, $v := . }}
+        - name: {{ $name | replace "." "-" | lower }}
+          configMap:
+            name: '{{ template "akka-cluster.fullname" $root }}-{{ $name | replace "." "-" | lower }}'
+        {{- end }}
+      {{- end }}
       restartPolicy: "{{ .Values.restartPolicy }}"
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       nodeSelector:

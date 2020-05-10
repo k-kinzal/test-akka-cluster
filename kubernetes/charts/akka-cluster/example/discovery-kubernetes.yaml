@@ -1,0 +1,37 @@
+rbac:
+  create: true
+
+akka:
+  remote:
+    port: 2552
+  http:
+    enabled: true
+    port: 8080
+    service:
+      type: LoadBalancer
+      port: 8080
+  config:
+    application.conf: |
+      akka {
+        loglevel = "INFO"
+        actor.provider = cluster
+      }
+
+      akka.cluster.sharding {
+        number-of-shards = 1000
+      }
+
+      akka.discovery {
+        kubernetes-api {
+          pod-label-selector = "app.kubernetes.io/instance=akkavis"
+        }
+      }
+
+      akka.management {
+        cluster.bootstrap {
+          contact-point-discovery {
+            discovery-method = kubernetes-api
+            required-contact-point-nr = 3
+          }
+        }
+      }

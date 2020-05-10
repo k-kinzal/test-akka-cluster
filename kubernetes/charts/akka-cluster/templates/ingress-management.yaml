@@ -1,7 +1,7 @@
 {{- if and .Values.akka.management.enabled .Values.akka.management.ingress.enabled -}}
 {{- $fullName := include "akka-cluster.fullname" . -}}
 {{- $svcPort := .Values.akka.http.service.port -}}
-apiVersion: {{ include ""akka-cluster.ingress.apiVersion""}}
+apiVersion: {{ include "akka-cluster.ingress.apiVersion" }}
 kind: Ingress
 metadata:
   name: {{ $fullName }}-management

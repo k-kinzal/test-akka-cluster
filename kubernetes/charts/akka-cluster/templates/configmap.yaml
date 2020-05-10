@@ -1,0 +1,13 @@
+{{- $root := . -}}
+{{- range $name, $config := .Values.akka.config }}
+{{- if $name }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "akka-cluster.fullname" $root }}-{{ $name | replace "." "-" | lower }}
+data:
+  {{ $name }}: |
+    {{- $config | nindent 4 }}
+{{- end }}
+{{- end }}
